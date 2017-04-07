@@ -25,6 +25,7 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::sync::{Arc, RwLock};
+use std::sync::mpsc::{Sender, Receiver, channel};
 use std::time::Duration;
 
 use butterfly;
@@ -32,6 +33,7 @@ use butterfly::member::Member;
 use butterfly::trace::Trace;
 use butterfly::server::timing::Timing;
 use butterfly::server::Suitability;
+use eventsrv::message::event::EventEnvelope;
 use hcore::crypto::{default_cache_key_path, SymKey};
 use hcore::service::ServiceGroup;
 use hcore::os::process;
@@ -338,6 +340,23 @@ impl Manager {
         try!(http_gateway::Server::new(self.fs_cfg.clone(), self.http_listen.clone()).start());
         debug!("http-gateway server started");
 
+        let (event_tx, event_rx) = channel::<EventEnvelope>();
+        thread::Builder::new()
+            .name("sup-eventsrv".to_string())
+            .spawn(move || {
+                // create an eventsrv client here with a PUSH socket
+                match event_rx.recv() {
+                    Ok(data) => println!("Received some data! {:?}", data),
+                    Err(e) => println!("There was an error! {:?}", e),
+                }
+                // pass the data we've just received to the
+                // eventsrv client and have it send it to the
+                // event service, which is running in a separate
+                // process. this thread effectively serves the role
+                // of client.rs now.
+            })
+            .expect("unable to start sup-eventsrv thread");
+
         let mut last_census_update = CensusUpdate::default();
 
         loop {
@@ -353,6 +372,11 @@ impl Manager {
             if census_updated {
                 last_census_update = ncu;
                 self.persist_state();
+                // examine last_census_update and pull out the data that
+                // pertains to ME (this supervisor). send that data over
+                // the event_tx channel where it will be received by the
+                // thread we created above and PUSHed on via zmq to the
+                // event service.
             }
             for service in self.services
                     .write()

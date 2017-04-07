@@ -51,6 +51,7 @@ extern crate habitat_butterfly as butterfly;
 extern crate habitat_common as common;
 extern crate habitat_core as hcore;
 extern crate habitat_depot_client as depot_client;
+extern crate habitat_eventsrv as eventsrv;
 extern crate handlebars;
 extern crate iron;
 #[macro_use]

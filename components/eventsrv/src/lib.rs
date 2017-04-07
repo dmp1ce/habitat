@@ -18,7 +18,7 @@ extern crate protobuf;
 extern crate time;
 extern crate zmq;
 
-mod message;
+pub mod message;
 
 use message::event::EventEnvelope;
 use protobuf::parse_from_bytes;
@@ -69,8 +69,7 @@ pub fn proxy(frontend_port: i32, backend_port: i32) {
     let mut service_cache = HashMap::new();
     let mut member_cache = HashMap::new();
 
-    let mut poll_items = [pull_sock.as_poll_item(zmq::POLLIN),
-                          xpub_sock.as_poll_item(zmq::POLLIN)];
+    let mut poll_items = [pull_sock.as_poll_item(zmq::POLLIN), xpub_sock.as_poll_item(zmq::POLLIN)];
 
     loop {
         // A timeout of -1 says to wait indefinitely until a message comes

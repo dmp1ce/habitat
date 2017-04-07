@@ -26,6 +26,7 @@ habitat_butterfly = { path = "../butterfly" }
 habitat_common = { path = "../common" }
 habitat_core = { path = "../core" }
 habitat_depot_client = { path = "../builder-depot-client" }
+habitat_eventsrv = { path = "../eventsrv" }
 handlebars = { version = "*", features = ["serde_type", "partial4"], default-features = false }
 iron = "*"
 lazy_static = "*"
