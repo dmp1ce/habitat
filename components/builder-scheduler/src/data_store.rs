@@ -246,7 +246,7 @@ impl DataStore {
         Ok(packages)
     }
 
-    pub fn create_group(&self, msg: &GroupCreate, project_names: Vec<String>) -> Result<Group> {
+    pub fn create_group(&self, _msg: &GroupCreate, project_names: Vec<String>) -> Result<Group> {
         let conn = self.pool.get_shard(0)?;
 
         assert!(!project_names.is_empty());
