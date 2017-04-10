@@ -168,7 +168,6 @@ mod test {
         fixtures().join("sample_configs")
     }
 
-
     pub fn service_config_json_from_toml_file(filename: &str) -> serde_json::Value {
         let mut file = File::open(sample_configs().join(filename)).unwrap();
         let mut config = String::new();
@@ -205,13 +204,23 @@ mod test {
     }
 
     #[test]
+    fn deserialize_config_with_exposes_toml() {
+        let data = service_config_json_from_toml_file("simple_config.toml");
+        let cfg = serde_json::from_value::<ServiceConfig>(data).unwrap();
+        assert_eq!(cfg.pkg.name, "testplan");
+    }
+
+    #[test]
     fn each_alive_helper_content() {
         let mut template = Template::new();
         // template using the new `eachAlive` helper
-        template.register_template_file("each_alive", templates().join("each_alive.txt")).unwrap();
+        template
+            .register_template_file("each_alive", templates().join("each_alive.txt"))
+            .unwrap();
 
         // template using an each block with a nested if block filtering on `alive`
-        template.register_template_file("all_members", templates().join("all_members.txt"))
+        template
+            .register_template_file("all_members", templates().join("all_members.txt"))
             .unwrap();
 
         let data = service_config_json_from_toml_file("multiple_supervisors_config.toml");
@@ -226,10 +235,13 @@ mod test {
     fn each_alive_helper_first_node() {
         let mut template = Template::new();
         // template using the new `eachAlive` helper
-        template.register_template_file("each_alive", templates().join("each_alive.txt")).unwrap();
+        template
+            .register_template_file("each_alive", templates().join("each_alive.txt"))
+            .unwrap();
 
         // template using an each block with a nested if block filtering on `alive`
-        template.register_template_file("all_members", templates().join("all_members.txt"))
+        template
+            .register_template_file("all_members", templates().join("all_members.txt"))
             .unwrap();
 
         let data = service_config_json_from_toml_file("one_supervisor_not_started.toml");
@@ -244,12 +256,14 @@ mod test {
     fn each_alive_helper_with_identifier_alias() {
         let mut template = Template::new();
         // template using the new `eachAlive` helper
-        template.register_template_file("each_alive",
-                                        templates().join("each_alive_with_identifier.txt"))
+        template
+            .register_template_file("each_alive",
+                                    templates().join("each_alive_with_identifier.txt"))
             .unwrap();
 
         // template using an each block with a nested if block filtering on `alive`
-        template.register_template_file("all_members", templates().join("all_members.txt"))
+        template
+            .register_template_file("all_members", templates().join("all_members.txt"))
             .unwrap();
 
         let data = service_config_json_from_toml_file("multiple_supervisors_config.toml");

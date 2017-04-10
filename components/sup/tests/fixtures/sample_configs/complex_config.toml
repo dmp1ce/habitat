@@ -1,4 +1,88 @@
 [bind]
+has_daemon = true
+
+[bind.daemon]
+group = "default"
+ident = "shield.default"
+service = "shield"
+
+[[bind.daemon.members]]
+alive = true
+confirmed = false
+group = "default"
+member_id = "b1d42243971b449fbfd01a1d8f3bb8ff"
+persistent = true
+service = "shield"
+suspect = false
+
+[bind.daemon.members.cfg]
+port = 8080
+
+[bind.daemon.members.pkg]
+name = "shield"
+origin = "starkandwayne"
+release = "20170410102918"
+version = "0.10.4"
+
+[bind.daemon.members.sys]
+gossip_ip = "172.27.0.4"
+gossip_port = "9638"
+hostname = "2402c79ee5e1"
+http_gateway_ip = "0.0.0.0"
+http_gateway_port = "9631"
+ip = "172.27.0.4"
+
+[bind.daemon.first]
+alive = true
+confirmed = false
+group = "default"
+member_id = "b1d42243971b449fbfd01a1d8f3bb8ff"
+persistent = true
+service = "shield"
+suspect = false
+
+[bind.daemon.first.cfg]
+port = 8080
+
+[bind.daemon.first.pkg]
+name = "shield"
+origin = "starkandwayne"
+release = "20170410102918"
+version = "0.10.4"
+
+[bind.daemon.first.sys]
+gossip_ip = "172.27.0.4"
+gossip_port = "9638"
+hostname = "2402c79ee5e1"
+http_gateway_ip = "0.0.0.0"
+http_gateway_port = "9631"
+ip = "172.27.0.4"
+
+[bind.daemon.member_id.b1d42243971b449fbfd01a1d8f3bb8ff]
+alive = true
+confirmed = false
+group = "default"
+member_id = "b1d42243971b449fbfd01a1d8f3bb8ff"
+persistent = true
+service = "shield"
+suspect = false
+
+[bind.daemon.member_id.b1d42243971b449fbfd01a1d8f3bb8ff.cfg]
+port = 8080
+
+[bind.daemon.member_id.b1d42243971b449fbfd01a1d8f3bb8ff.pkg]
+name = "shield"
+origin = "starkandwayne"
+release = "20170410102918"
+version = "0.10.4"
+
+[bind.daemon.member_id.b1d42243971b449fbfd01a1d8f3bb8ff.sys]
+gossip_ip = "172.27.0.4"
+gossip_port = "9638"
+hostname = "2402c79ee5e1"
+http_gateway_ip = "0.0.0.0"
+http_gateway_port = "9631"
+ip = "172.27.0.4"
 
 [cfg]
 
