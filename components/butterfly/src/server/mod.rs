@@ -412,6 +412,34 @@ impl Server {
         }
     }
 
+    /// Set our member to departed, then wait a few gossip rounds before we return to ensure we get
+    /// a reasonable spread to the rumor.
+    pub fn set_departed(&self) {
+        let member = {
+            let mut me = self.member.write().expect("Member lock is poisoned");
+            let mut incarnation = me.get_incarnation();
+            incarnation += 1;
+            me.set_incarnation(incarnation);
+            me.set_departed(true);
+            me.clone()
+        };
+        let rk = RumorKey::from(&member);
+        let trace_member_id = String::from(member.get_id());
+        let trace_incarnation = member.get_incarnation();
+        self.member_list
+            .insert_health_by_id(member.get_id(), Health::Departed);
+        trace_it!(MEMBERSHIP: self,
+                  TraceKind::MemberUpdate,
+                  trace_member_id,
+                  trace_incarnation,
+                  Health::Departed);
+        self.rumor_list.insert(rk);
+        let wait_rounds = self.swim_rounds() + 2;
+        while wait_rounds > self.swim_rounds() {
+            thread::sleep(Duration::from_millis(500));
+        }
+    }
+
     /// Given a membership record and some health, insert it into the Member List.
     pub fn insert_member_from_rumor(&self, member: Member, mut health: Health) {
         let mut incremented_incarnation = false;
@@ -474,7 +502,8 @@ impl Server {
         }
     }
 
-    /// Get all the Member ID's who are present in a given service group.
+    /// Get all the Member ID's who are present in a given service group, and eligible to vote
+    /// (alive)
     pub fn get_electorate(&self, key: &str) -> Vec<String> {
         let mut electorate = vec![];
         self.service_store
@@ -485,6 +514,17 @@ impl Server {
         electorate
     }
 
+    /// Get all the Member ID's who are present in a given service group, and count towards quorum.
+    pub fn get_total_population(&self, key: &str) -> usize {
+        let mut total_pop = 0;
+        self.service_store
+            .with_rumors(key, |s| if self.member_list
+                   .check_in_voting_population_by_id(s.get_member_id()) {
+                total_pop += 1;
+            });
+        total_pop
+    }
+
     /// Check if a given service group has quorum to run an election.
     ///
     /// A given group has quorum if, from this servers perspective, it has an alive population that
@@ -492,7 +532,7 @@ impl Server {
     pub fn check_quorum(&self, key: &str) -> bool {
         let electorate = self.get_electorate(key);
 
-        let total_population = self.service_store.len_for_key(key);
+        let total_population = self.get_total_population(key);
         let alive_population = electorate.len();
 
         if total_population < 3 {

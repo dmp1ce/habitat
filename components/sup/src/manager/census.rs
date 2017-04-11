@@ -79,6 +79,7 @@ pub struct CensusEntry {
     pub alive: Option<bool>,
     pub suspect: Option<bool>,
     pub confirmed: Option<bool>,
+    pub departed: Option<bool>,
     pub persistent: Option<bool>,
 }
 
@@ -237,6 +238,14 @@ impl CensusEntry {
         self.initialized.unwrap_or(false)
     }
 
+    pub fn set_departed(&mut self, value: bool) {
+        self.departed = Some(value);
+    }
+
+    pub fn get_departed(&self) -> bool {
+        self.departed.unwrap_or(false)
+    }
+
     pub fn set_alive(&mut self, value: bool) {
         self.alive = Some(value);
     }
@@ -306,17 +315,27 @@ impl CensusEntry {
                 self.set_alive(true);
                 self.set_suspect(false);
                 self.set_confirmed(false);
+                self.set_departed(false);
             }
             Health::Suspect => {
                 self.set_alive(false);
                 self.set_suspect(true);
                 self.set_confirmed(false);
+                self.set_departed(false);
             }
             Health::Confirmed => {
                 self.set_alive(false);
                 self.set_suspect(false);
                 self.set_confirmed(true);
+                self.set_departed(false);
             }
+            Health::Departed => {
+                self.set_alive(false);
+                self.set_suspect(false);
+                self.set_confirmed(false);
+                self.set_departed(true);
+            }
+
         }
     }
 

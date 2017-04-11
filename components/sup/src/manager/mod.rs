@@ -595,9 +595,12 @@ impl Manager {
     }
 
     fn shutdown(&self) {
+        outputln!("Attempting to gracefully depart from butterfly; may take up to 7 seconds.");
+        self.butterfly.set_departed();
+
         let mut services = self.services
             .write()
-            .expect("Services lock is poisend!");
+            .expect("Services lock is poisoned!");
         for mut service in services.drain(..) {
             if let Err(err) = self.remove_service(&mut service) {
                 warn!("Couldn't cleanly shutdown service, {}, {}", service, err);

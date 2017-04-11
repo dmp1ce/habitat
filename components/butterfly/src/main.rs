@@ -43,6 +43,7 @@ fn main() {
 
     let bind_to = args.next().unwrap();
     println!("Binding to {}", bind_to);
+    info!("Starting test butterfly");
 
     let bind_to_addr = bind_to.parse::<SocketAddr>().unwrap();
     let bind_port = bind_to_addr.port();
