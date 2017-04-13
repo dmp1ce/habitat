@@ -31,6 +31,14 @@ message PackageIdent {
   optional string release = 4;
 }
 
+message CensusUpdate {
+  optional uint64 service_counter = 1;
+  optional uint64 service_config_counter = 2;
+  optional uint64 election_counter = 3;
+  optional uint64 election_update_counter = 4;
+  optional uint64 membership_counter = 5;
+}
+
 message CensusEntry {
   optional string member_id = 1;
   optional string service = 2;

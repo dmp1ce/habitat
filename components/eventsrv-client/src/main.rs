@@ -17,12 +17,12 @@ extern crate habitat_eventsrv_client;
 use std::env;
 
 fn main() {
-    let mut args: Vec<_> = env::args().collect();
-    args.remove(0); // drop the binary name
+    // let mut args: Vec<_> = env::args().collect();
+    // args.remove(0); // drop the binary name
 
     // First should be the path to a file
     // Everything else is a port number
-    let file_arg = args.remove(0);
+    // let file_arg = args.remove(0);
 
-    habitat_eventsrv_client::start(file_arg, args)
+    // habitat_eventsrv_client::start(file_arg, args)
 }

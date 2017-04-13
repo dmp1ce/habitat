@@ -33,10 +33,13 @@ use butterfly::member::Member;
 use butterfly::trace::Trace;
 use butterfly::server::timing::Timing;
 use butterfly::server::Suitability;
-use eventsrv::message::event::EventEnvelope;
+use eventsrv::message::event::{EventEnvelope, EventEnvelope_Type,
+                               CensusUpdate as CensusUpdateProto};
+use eventsrv_client::EventSrvClient;
 use hcore::crypto::{default_cache_key_path, SymKey};
 use hcore::service::ServiceGroup;
 use hcore::os::process;
+use protobuf::Message;
 use serde_json;
 use time::{SteadyTime, Duration as TimeDuration};
 use toml;
@@ -340,13 +343,27 @@ impl Manager {
         try!(http_gateway::Server::new(self.fs_cfg.clone(), self.http_listen.clone()).start());
         debug!("http-gateway server started");
 
-        let (event_tx, event_rx) = channel::<EventEnvelope>();
+        let (event_tx, event_rx) = channel::<CensusUpdateProto>();
         thread::Builder::new()
             .name("sup-eventsrv".to_string())
             .spawn(move || {
+                let ports = vec!["10001".to_string(),
+                                 "10011".to_string(),
+                                 "10021".to_string()];
+                let client = EventSrvClient::new("test.json".to_string(), ports);
+                client.connect().unwrap();
+
                 // create an eventsrv client here with a PUSH socket
                 match event_rx.recv() {
-                    Ok(data) => println!("Received some data! {:?}", data),
+                    Ok(data) => {
+                        println!("Received some data! {:?}", data);
+                        let mut ee = EventEnvelope::new();
+                        ee.set_field_type(EventEnvelope_Type::ProtoBuf);
+                        ee.set_payload(data.write_to_bytes().unwrap());
+                        ee.set_member_id(1);
+                        ee.set_service("LOL SERVICE".to_string());
+                        client.send(ee);
+                    }
                     Err(e) => println!("There was an error! {:?}", e),
                 }
                 // pass the data we've just received to the
@@ -372,6 +389,13 @@ impl Manager {
             if census_updated {
                 last_census_update = ncu;
                 self.persist_state();
+                debug!("********** last census update = {:?}", &last_census_update);
+                let mut cu = CensusUpdateProto::new();
+                cu.set_service_counter(last_census_update.service_counter as u64);
+                event_tx.send(cu);
+
+                // JB TODO: we need to pull out the portion of this that pertains to ME before
+                // sending it.
                 // examine last_census_update and pull out the data that
                 // pertains to ME (this supervisor). send that data over
                 // the event_tx channel where it will be received by the

@@ -64,6 +64,7 @@ extern crate notify;
 extern crate persistent;
 #[macro_use]
 extern crate prometheus;
+extern crate protobuf;
 extern crate rand;
 extern crate regex;
 #[macro_use]
