@@ -85,7 +85,7 @@ pub fn proxy(frontend_port: i32, backend_port: i32) {
 
             let bytes = pull_sock.recv_bytes(0).unwrap();
             let event = parse_from_bytes::<EventEnvelope>(&bytes).unwrap();
-            let member_id = event.get_member_id();
+            let member_id = event.get_member_id().to_string();
             let service = event.get_service().to_string();
             if service.is_empty() {
                 warn!("missing service: {:?}", event);
@@ -96,7 +96,7 @@ pub fn proxy(frontend_port: i32, backend_port: i32) {
             // service cache, we also record the member ID, and vice
             // versa for the member cache; these data will be used for
             // deduplication of messages being sent to new subscribers.
-            service_cache.insert(service.clone(), (member_id, bytes.clone()));
+            service_cache.insert(service.clone(), (member_id.clone(), bytes.clone()));
             member_cache.insert(member_id, (service, bytes.clone()));
 
             xpub_sock.send(&bytes, 0).unwrap();
@@ -121,7 +121,7 @@ pub fn proxy(frontend_port: i32, backend_port: i32) {
 
                 let mut members_encountered = HashSet::new();
 
-                for (_, &(member_id, ref message)) in &service_cache {
+                for (_, &(ref member_id, ref message)) in &service_cache {
                     members_encountered.insert(member_id);
                     xpub_sock.send(&message, 0).unwrap();
                 }

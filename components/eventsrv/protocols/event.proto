@@ -10,7 +10,7 @@ message EventEnvelope {
   optional Type type = 1;
   optional bytes payload = 2;
   optional uint64 timestamp = 3;
-  optional uint64 member_id = 4; // TODO: this needs to be a string
+  optional string member_id = 4;
   optional string service = 5;
 }
 
@@ -29,14 +29,6 @@ message PackageIdent {
   optional string name = 2;
   optional string version = 3;
   optional string release = 4;
-}
-
-message CensusUpdate {
-  optional uint64 service_counter = 1;
-  optional uint64 service_config_counter = 2;
-  optional uint64 election_counter = 3;
-  optional uint64 election_update_counter = 4;
-  optional uint64 membership_counter = 5;
 }
 
 message CensusEntry {

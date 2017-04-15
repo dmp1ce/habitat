@@ -25,7 +25,7 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::sync::{Arc, RwLock};
-use std::sync::mpsc::{Sender, Receiver, channel};
+use std::sync::mpsc::channel;
 use std::time::Duration;
 
 use butterfly;
@@ -33,13 +33,11 @@ use butterfly::member::Member;
 use butterfly::trace::Trace;
 use butterfly::server::timing::Timing;
 use butterfly::server::Suitability;
-use eventsrv::message::event::{EventEnvelope, EventEnvelope_Type,
-                               CensusUpdate as CensusUpdateProto};
+use eventsrv::message::event::{EventEnvelope, EventEnvelope_Type};
 use eventsrv_client::EventSrvClient;
 use hcore::crypto::{default_cache_key_path, SymKey};
 use hcore::service::ServiceGroup;
 use hcore::os::process;
-use protobuf::Message;
 use serde_json;
 use time::{SteadyTime, Duration as TimeDuration};
 use toml;
@@ -343,34 +341,32 @@ impl Manager {
         try!(http_gateway::Server::new(self.fs_cfg.clone(), self.http_listen.clone()).start());
         debug!("http-gateway server started");
 
-        let (event_tx, event_rx) = channel::<CensusUpdateProto>();
+        let (event_tx, event_rx) = channel::<Vec<CensusEntry>>();
+        let member_id = String::from(self.butterfly.member_id());
+
         thread::Builder::new()
             .name("sup-eventsrv".to_string())
             .spawn(move || {
                 let ports = vec!["10001".to_string(),
                                  "10011".to_string(),
                                  "10021".to_string()];
-                let client = EventSrvClient::new("test.json".to_string(), ports);
+                let client = EventSrvClient::new(ports);
                 client.connect().unwrap();
 
-                // create an eventsrv client here with a PUSH socket
                 match event_rx.recv() {
-                    Ok(data) => {
-                        println!("Received some data! {:?}", data);
+                    Ok(census_entries) => {
+                        println!("Received some data! {:?}", census_entries);
                         let mut ee = EventEnvelope::new();
                         ee.set_field_type(EventEnvelope_Type::ProtoBuf);
-                        ee.set_payload(data.write_to_bytes().unwrap());
-                        ee.set_member_id(1);
-                        ee.set_service("LOL SERVICE".to_string());
-                        client.send(ee);
+                        // here we need to serialize that vec of census entries
+                        // ee.set_payload("GOOD TIMES".to_string().write_to_bytes().unwrap());
+                        ee.set_payload(String::from("GOOD TIMES").into_bytes());
+                        ee.set_member_id(member_id);
+                        ee.set_service("habitat-supervisor".to_string());
+                        let _ = client.send(ee);
                     }
                     Err(e) => println!("There was an error! {:?}", e),
                 }
-                // pass the data we've just received to the
-                // eventsrv client and have it send it to the
-                // event service, which is running in a separate
-                // process. this thread effectively serves the role
-                // of client.rs now.
             })
             .expect("unable to start sup-eventsrv thread");
 
@@ -389,18 +385,25 @@ impl Manager {
             if census_updated {
                 last_census_update = ncu;
                 self.persist_state();
-                debug!("********** last census update = {:?}", &last_census_update);
-                let mut cu = CensusUpdateProto::new();
-                cu.set_service_counter(last_census_update.service_counter as u64);
-                event_tx.send(cu);
+                debug!("********** census list = {:?}", &self.census_list);
 
-                // JB TODO: we need to pull out the portion of this that pertains to ME before
-                // sending it.
-                // examine last_census_update and pull out the data that
-                // pertains to ME (this supervisor). send that data over
-                // the event_tx channel where it will be received by the
-                // thread we created above and PUSHed on via zmq to the
-                // event service.
+                let mut censuses = Vec::<CensusEntry>::new();
+                for service in self.services
+                        .read()
+                        .expect("Services lock is poisoned!")
+                        .iter() {
+                    if let Some(census) = self.census_list.get(service.service_group.as_ref()) {
+                        if let Some(c) = census.me() {
+                            censuses.push(c.clone());
+                        }
+                    }
+                }
+
+                if censuses.is_empty() {
+                    debug!("There's nothing to send to the EventSrv this tick.");
+                } else {
+                    let _ = event_tx.send(censuses);
+                }
             }
             for service in self.services
                     .write()
